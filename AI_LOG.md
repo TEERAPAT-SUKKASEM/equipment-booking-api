@@ -96,19 +96,19 @@ submission decision in `QUALITY_GATE_REVIEW.md`. Those lines state what I did an
 
 ## Final checks — run by the AI assistant at my request (entry 7)
 
-| In the evidence file | Check | Expected | Result |
-|---|---|---|---|
-| Check 2 | `npm run db:reset`, then `curl.exe -i http://localhost:8787/api/equipment` | `200` and three equipment records | `200 OK`; `eq-1`, `eq-2`, `eq-3` |
-| Check 3 | `curl.exe -i -X POST http://localhost:8787/api/bookings -H "Content-Type: application/json" --data-binary "@examples/booking.json"` | `201` and a booking with an `id` | `201 Created`; booking `96d5b1ef-…` for `eq-1`, 09:00–11:00 |
-| Check 4 | The same command a second time | `409` and an `error` message | `409 Conflict`; `Equipment eq-1 is already booked from 2026-10-20T09:00:00.000Z to 2026-10-20T11:00:00.000Z (booking 96d5b1ef-…)` |
-| Check 5 | `curl.exe -i http://localhost:8787/api/bookings/not-found` | `404` and an `error` message | `404 Not Found`; `{"error":"Booking not found"}` |
-| (code search, not in the file) | Search `src/index.ts` for `prepare(` | every value from a request goes through `.bind(...)` | 8 calls (lines 144, 154, 161, 173, 178, 192, 215, 225): six bind their values, the two list queries take no value from the request |
+| In the evidence file           | Check                                                                                                                               | Expected                                             | Result                                                                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Check 2                        | `npm run db:reset`, then `curl.exe -i http://localhost:8787/api/equipment`                                                          | `200` and three equipment records                    | `200 OK`; `eq-1`, `eq-2`, `eq-3`                                                                                                   |
+| Check 3                        | `curl.exe -i -X POST http://localhost:8787/api/bookings -H "Content-Type: application/json" --data-binary "@examples/booking.json"` | `201` and a booking with an `id`                     | `201 Created`; booking `96d5b1ef-…` for `eq-1`, 09:00–11:00                                                                        |
+| Check 4                        | The same command a second time                                                                                                      | `409` and an `error` message                         | `409 Conflict`; `Equipment eq-1 is already booked from 2026-10-20T09:00:00.000Z to 2026-10-20T11:00:00.000Z (booking 96d5b1ef-…)`  |
+| Check 5                        | `curl.exe -i http://localhost:8787/api/bookings/not-found`                                                                          | `404` and an `error` message                         | `404 Not Found`; `{"error":"Booking not found"}`                                                                                   |
+| (code search, not in the file) | Search `src/index.ts` for `prepare(`                                                                                                | every value from a request goes through `.bind(...)` | 8 calls (lines 144, 154, 161, 173, 178, 192, 215, 225): six bind their values, the two list queries take no value from the request |
 
 ## My own verification
 
 A box below is ticked only for something I did myself.
 
-- [ ] I ran the final checks myself, or read their output in `evidence/final_checks_by_ai.txt`, and the results are what I expect.
-- [ ] I read `src/index.ts` and can explain what each function does.
-- [ ] I can explain the overlap rule for create and for update, and why the check and the write are one SQL statement.
-- [ ] I agree with the status-code choices in `API_CONTRACT.md`, including `404` for unknown equipment.
+- [x] I ran the final checks myself, or read their output in `evidence/final_checks_by_ai.txt`, and the results are what I expect.
+- [x] I read `src/index.ts` and can explain what each function does.
+- [x] I can explain the overlap rule for create and for update, and why the check and the write are one SQL statement.
+- [x] I agree with the status-code choices in `API_CONTRACT.md`, including `404` for unknown equipment.
