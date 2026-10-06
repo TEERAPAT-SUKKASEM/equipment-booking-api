@@ -3,18 +3,23 @@
 Backend API for reserving shared faculty equipment (cameras, projectors, meeting rooms).
 The same equipment cannot be booked for overlapping times.
 
-- **Stack:** TypeScript, [Hono](https://hono.dev), Cloudflare Workers runtime (`wrangler dev`), local D1 (SQLite)
+- **Stack:** TypeScript, [Hono](https://hono.dev), Cloudflare Workers with a D1 (SQLite) database; `wrangler dev` with a local D1 for development
 - **Base API URL (deployed):** `https://equipment-booking-api.skywatch.workers.dev/api`
 - **Base API URL (local development):** `http://localhost:8787/api`
 - **Source:** https://github.com/TEERAPAT-SUKKASEM/equipment-booking-api
 
-| Document | Content |
+## Submission
+
+| Requirement | Where |
 |---|---|
-| [API_CONTRACT.md](API_CONTRACT.md) | Endpoints, payloads, status codes and why, assumptions |
-| [SCHEMA.md](SCHEMA.md) | ERD, tables, constraints, how the overlap rule is enforced |
-| [evidence/README.md](evidence/README.md) | Test results (curl) and the Base API URL used |
-| [QUALITY_GATE_REVIEW.md](QUALITY_GATE_REVIEW.md) | Findings after the first version, fixes and evidence |
-| [AI_LOG.md](AI_LOG.md) | How AI was used and what was verified |
+| Link for the source code (GitHub) | https://github.com/TEERAPAT-SUKKASEM/equipment-booking-api |
+| Link for the API (Cloudflare) | `https://equipment-booking-api.skywatch.workers.dev/api`, for example [/api/equipment](https://equipment-booking-api.skywatch.workers.dev/api/equipment) |
+| Runnable source code and run instructions | `src/index.ts`, and [Run it](#run-it) below |
+| API contract | [API_CONTRACT.md](API_CONTRACT.md): endpoints, payloads, status codes and why, assumptions |
+| Brief schema or ERD | [SCHEMA.md](SCHEMA.md): ERD, tables, constraints, how the overlap rule is enforced |
+| AI log | [AI_LOG.md](AI_LOG.md): how AI was used and what was verified |
+| Quality Gate review | [QUALITY_GATE_REVIEW.md](QUALITY_GATE_REVIEW.md): findings after the first version, fixes and evidence |
+| Evidence of test cases and the Base API URL used | [evidence/README.md](evidence/README.md): 9 guide steps and 25 cases, run against the deployed URL and against localhost |
 
 ## Run it
 

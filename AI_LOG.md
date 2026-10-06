@@ -6,7 +6,7 @@
 - **Session:** https://claude.ai/code/session_01AHWQTxatdUg9X6kWryvKjq
 - Times are local (UTC+7) on 2026-10-06. Every commit made by the assistant carries a `Co-Authored-By: Claude` line.
 
-**Extent of AI use.** I gave five prompts (one in entry 1, three in entry 7, one in entry 8). From the exam
+**Extent of AI use.** I gave six prompts (one in entry 1, three in entry 7, one each in entries 8 and 9). From the exam
 brief and the rubric the assistant wrote the source code, the SQL, the test scripts and the documents in
 this repository, ran the checks listed as "AI checks" below, including the final checks, pushed the
 repository to GitHub and deployed the API. Checks that the AI ran are **not** counted as my own
@@ -118,6 +118,14 @@ committed them (commit `c3d7a07`, 15:13).
 **AI checks (against the deployed URL):** instructor's guide 9 of 9, test script 25 of 25, concurrency test
 0 double bookings in 60 rounds (`evidence/deployed_curl_guide_run.txt`, `deployed_curl_tests_output.txt`,
 `deployed_race_test.txt`). These runs were made by the assistant, not by me.
+
+### 9 — 15:24 · Check against the updated submission requirements
+
+**Prompt:** a photo of the updated "Submission Requirements" list with the words "this is the current submission requirement".
+
+**What the AI did:** checked the eight items against the repository and the live links (GitHub page `200`
+without a login, `/api/equipment` `200`), found nothing missing, and added the "Submission" table at the
+top of `README.md` that maps each requirement to its link or file.
 
 ## Final checks — run by the AI assistant at my request (entry 7)
 
