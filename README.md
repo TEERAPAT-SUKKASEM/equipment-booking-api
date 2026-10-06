@@ -9,7 +9,7 @@ The same equipment cannot be booked for overlapping times.
 
 ## Run it
 
-Requires Node.js 20 or newer (developed on Node 24) and npm.
+Requires Node.js 22 or newer (wrangler 4 does not run on older versions; developed on Node 24.18) and npm.
 
 ```bash
 npm install        # install hono, wrangler, typescript
