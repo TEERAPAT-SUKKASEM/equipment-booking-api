@@ -4,7 +4,9 @@ Backend API for reserving shared faculty equipment (cameras, projectors, meeting
 The same equipment cannot be booked for overlapping times.
 
 - **Stack:** TypeScript, [Hono](https://hono.dev), Cloudflare Workers runtime (`wrangler dev`), local D1 (SQLite)
-- **Base API URL:** `http://localhost:8787/api`
+- **Base API URL (deployed):** `https://equipment-booking-api.skywatch.workers.dev/api`
+- **Base API URL (local development):** `http://localhost:8787/api`
+- **Source:** https://github.com/TEERAPAT-SUKKASEM/equipment-booking-api
 
 | Document | Content |
 |---|---|
@@ -36,12 +38,16 @@ These three commands are the same in PowerShell, cmd and bash. Notes:
 
 ## Try it
 
+The deployed API needs no installation. To try a local server instead, use `http://localhost:8787/api` as the base URL.
+
 bash / Git Bash:
 
 ```bash
-curl -i http://localhost:8787/api/equipment
+BASE_URL="https://equipment-booking-api.skywatch.workers.dev/api"
 
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i "$BASE_URL/equipment"
+
+curl -i -X POST "$BASE_URL/bookings" \
   -H "Content-Type: application/json" \
   -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation"}'
 ```
@@ -49,12 +55,28 @@ curl -i -X POST http://localhost:8787/api/bookings \
 PowerShell (quotes inside `-d '...'` are not passed on reliably, so the body is read from a file; note `curl.exe`, not `curl`):
 
 ```powershell
-curl.exe -i http://localhost:8787/api/equipment
-curl.exe -i -X POST http://localhost:8787/api/bookings -H "Content-Type: application/json" --data-binary "@examples/booking.json"
+$BASE_URL = "https://equipment-booking-api.skywatch.workers.dev/api"
+curl.exe -i "$BASE_URL/equipment"
+curl.exe -i -X POST "$BASE_URL/bookings" -H "Content-Type: application/json" --data-binary "@examples/booking.json"
 ```
 
 Expected: `200` with three equipment records, then `201` with the created booking.
 Sending the same booking a second time returns `409`, because the slot is now taken.
+The deployed database is shared by everyone who has the URL: if somebody else already holds that slot, the
+first `POST` returns `409` too. Delete that booking (`curl -X DELETE "$BASE_URL/bookings/<id>"`) or use another date.
+
+## Deploy it
+
+The API is deployed on Cloudflare Workers with a remote D1 database (id in `wrangler.jsonc`).
+
+```bash
+npx wrangler login
+npx wrangler d1 create equipment-booking-db   # only for a new account: put the printed database_id into wrangler.jsonc
+npm run db:setup:remote                       # create the tables and seed data in the deployed database
+npm run deploy
+```
+
+`npm run dev` never touches the deployed database; local data stays in `.wrangler/state/`.
 
 ## Test it
 
@@ -68,7 +90,13 @@ bash tests/curl_tests.sh     # 25 cases: CRUD, 400, 404, 409 (prints PASS/FAIL p
 node tests/race_test.mjs     # simultaneous requests for one slot: only one may win
 ```
 
-Recorded results are in [evidence/](evidence/README.md).
+The scripts use the local server by default. To run them against the deployed API, set the base URL first:
+
+```bash
+BASE_URL="https://equipment-booking-api.skywatch.workers.dev/api" bash tests/curl_guide.sh
+```
+
+Recorded results, local and deployed, are in [evidence/](evidence/README.md).
 
 ## Endpoints
 

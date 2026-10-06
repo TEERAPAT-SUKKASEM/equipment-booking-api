@@ -6,10 +6,11 @@
 - **Session:** https://claude.ai/code/session_01AHWQTxatdUg9X6kWryvKjq
 - Times are local (UTC+7) on 2026-10-06. Every commit made by the assistant carries a `Co-Authored-By: Claude` line.
 
-**Extent of AI use.** I gave three prompts (one in entry 1, two in entry 7). From the exam brief and the
-rubric the assistant wrote the source code, the SQL, the test scripts and the documents in this
-repository, and ran the checks listed as "AI checks" below, including the final checks. Checks that the
-AI ran are **not** counted as my own verification; what I checked myself is in the last section.
+**Extent of AI use.** I gave five prompts (one in entry 1, three in entry 7, one in entry 8). From the exam
+brief and the rubric the assistant wrote the source code, the SQL, the test scripts and the documents in
+this repository, ran the checks listed as "AI checks" below, including the final checks, pushed the
+repository to GitHub and deployed the API. Checks that the AI ran are **not** counted as my own
+verification; what I checked myself is in the last section.
 
 ## Entries
 
@@ -93,6 +94,30 @@ as two characters towards the length limits) was documented in `API_CONTRACT.md`
 
 **What the AI did not do:** it did not tick the boxes under "My own verification" and did not choose the
 submission decision in `QUALITY_GATE_REVIEW.md`. Those lines state what I did and can explain myself.
+
+A third prompt, "so which file i have to do again?", was answered with the two file names and line
+numbers. I then ticked the four boxes and `READY` myself and saved the files; the assistant only
+committed them (commit `c3d7a07`, 15:13).
+
+### 8 — 15:10 to 15:20 · GitHub, deployment and deployed URL, done by the assistant
+
+**Prompt:** "ok i ticked them, rebuild the zip for me and can you put github link and deploy to cloudefare then replace the localhost with the deployed link too?"
+
+**What the AI did**
+
+- Created the private GitHub repository `TEERAPAT-SUKKASEM/equipment-booking-api` and pushed all commits
+  and the `v1-snapshot` tag.
+- Started `wrangler login`, which I approved in the browser. Then it created a remote D1 database,
+  loaded `db/schema.sql` into it and deployed the Worker (commit `c668a25`):
+  `https://equipment-booking-api.skywatch.workers.dev/api`
+- Put the deployed URL and the GitHub link into `README.md`, `API_CONTRACT.md` and `evidence/README.md`.
+  Evidence that had been recorded on localhost was left unchanged, because those runs really were local;
+  the deployed API got its own evidence files instead.
+- Rebuilt the submission zip.
+
+**AI checks (against the deployed URL):** instructor's guide 9 of 9, test script 25 of 25, concurrency test
+0 double bookings in 60 rounds (`evidence/deployed_curl_guide_run.txt`, `deployed_curl_tests_output.txt`,
+`deployed_race_test.txt`). These runs were made by the assistant, not by me.
 
 ## Final checks — run by the AI assistant at my request (entry 7)
 

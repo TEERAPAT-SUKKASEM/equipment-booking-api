@@ -1,6 +1,8 @@
 # Test Evidence
 
-- **Base API URL used for testing:** `http://localhost:8787/api`
+- **Base API URLs used for testing:** `https://equipment-booking-api.skywatch.workers.dev/api` (deployed on
+  Cloudflare Workers with a remote D1 database) and `http://localhost:8787/api` (local `wrangler dev`).
+  Every evidence file states the URL it was run against; the files recorded on localhost were not rewritten.
 - **HTTP client:** `curl` 8.18.0 in Git Bash on Windows 11 for the test scripts; `curl.exe` 8.21.0 for the
   PowerShell example; the concurrency test uses Node.js `fetch`
 - **Code tested:** commit `e621a20` (`src/` and `db/` have not changed since; the clean-clone run used commit
@@ -13,6 +15,9 @@
 
 | Run | File | Result |
 |---|---|---|
+| **Deployed API:** instructor's cURL Quick Test Guide, steps 1–9, full `curl -i` output | [deployed_curl_guide_run.txt](deployed_curl_guide_run.txt) | 9 of 9 match the expected status |
+| **Deployed API:** own test script, 25 cases | [deployed_curl_tests_output.txt](deployed_curl_tests_output.txt) | 25 passed, 0 failed |
+| **Deployed API:** concurrency test | [deployed_race_test.txt](deployed_race_test.txt) | PASS: 0 of 60 rounds double-booked |
 | Instructor's cURL Quick Test Guide, steps 1–9, full `curl -i` output | [curl_guide_run.txt](curl_guide_run.txt) | 9 of 9 match the expected status |
 | Own test script, 25 cases (CRUD + 400 + 404 + 409) | [curl_tests_output.txt](curl_tests_output.txt) | 25 passed, 0 failed |
 | Concurrency test on the **first version** (`v1-snapshot`) | [race_before_fix.txt](race_before_fix.txt) | FAIL: 3 of 60 rounds double-booked |

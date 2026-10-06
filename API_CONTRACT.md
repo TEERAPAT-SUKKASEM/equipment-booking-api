@@ -4,7 +4,8 @@ The first version of this contract was written **before** the implementation (gi
 commit `ff38e6a` precedes the first code commit). It was updated after the Quality Gate review; the
 changes are listed in [QUALITY_GATE_REVIEW.md](QUALITY_GATE_REVIEW.md).
 
-- **Base URL (local):** `http://localhost:8787/api`
+- **Base URL (deployed):** `https://equipment-booking-api.skywatch.workers.dev/api`
+- **Base URL (local development):** `http://localhost:8787/api`
 - **Format:** JSON in, JSON out (`Content-Type: application/json`)
 - **Timestamps:** ISO 8601 date-time with an explicit offset; always returned normalised to UTC with
   millisecond precision, e.g. `2026-10-20T09:00:00.000Z`

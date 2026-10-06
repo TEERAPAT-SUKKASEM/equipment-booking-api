@@ -1,0 +1,172 @@
+cURL Quick Test Guide - run of all nine steps
+BASE_URL="https://equipment-booking-api.skywatch.workers.dev/api"
+Date:   2026-10-06T08:14:58Z
+Commit: c668a25
+
+## 1. List equipment - expect 200
+$ curl -i "$BASE_URL/equipment"
+HTTP/1.1 200 OK
+Date: Tue, 06 Oct 2026 08:14:58 GMT
+Content-Type: application/json
+Content-Length: 186
+Connection: keep-alive
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=RkUjzkK2ykZbWZRiLCs0cShykwfBJeQWgG7w1fqnQ6CWp684om7E3XMxtuNHDLFBVySDG1I1TmktUFb58q00iVPQq8Ff%2BCji4wk3dTiJuetX16FNNgO9TXuoTp9VGg9vb8qvCOqP2Ep1AaiUicXz5uZIpWqX9jwJmCiSNQY%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a4633730bec31f6e-SIN
+alt-svc: h3=":443"; ma=86400
+
+[{"id":"eq-1","name":"Projector A","location":"Building 1"},{"id":"eq-2","name":"Camera B","location":"Building 2"},{"id":"eq-3","name":"Meeting Room C","location":"Library, 2nd floor"}]
+=> PASS (expected 200, got 200)
+
+## 2. List bookings - expect 200
+$ curl -i "$BASE_URL/bookings"
+HTTP/1.1 200 OK
+Date: Tue, 06 Oct 2026 08:14:59 GMT
+Content-Type: application/json
+Content-Length: 2
+Connection: keep-alive
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=bg4jJZh%2FOw%2BJgaDYWCR7QT3TilYOYnTxySzXslyObbLRVf%2BsmF%2FKgv3FrhOIbdElMCPfOulkacrLux5eM5kLai2rH2MAwD7YPssK%2BJEwO9BYcAgOOOMl1k7Chxu9ilF4w4x4Mhb9zOGCuABwQ5VPfQLEOvB3KbTj84X3BFM%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a463373339f2d4a5-SIN
+alt-svc: h3=":443"; ma=86400
+
+[]
+=> PASS (expected 200, got 200)
+
+## 3. Create a booking - expect 201
+$ curl -i -X POST "$BASE_URL/bookings" -H "Content-Type: application/json" -d '{
+    "equipmentId": "eq-1",
+    "borrowerName": "Somchai Jaidee",
+    "startAt": "2026-10-20T09:00:00.000Z",
+    "endAt": "2026-10-20T11:00:00.000Z",
+    "purpose": "Class presentation"
+  }'
+HTTP/1.1 201 Created
+Date: Tue, 06 Oct 2026 08:14:59 GMT
+Content-Type: application/json
+Content-Length: 279
+Connection: keep-alive
+Location: /api/bookings/9321d58f-7a0c-4cc5-8d69-302c63f4751d
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=IyN%2BL9ebULPU%2Bg%2F1eT4hZkZ%2Bom2dlivD4JBYzNleFQCofaxVmHGjIg%2Fp5StxW9JrCWqgu%2FHLsueES6IpK27agDz5U7r31oi9JtWv58ll30NbWhW9RJEeFAtVs%2Fx%2BM%2Bj3SOv%2BU6gI8Xy54VBcR2BU9xBKBchj0kfM7eATyAU%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a46337371afc8065-HKG
+alt-svc: h3=":443"; ma=86400
+
+{"id":"9321d58f-7a0c-4cc5-8d69-302c63f4751d","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation","createdAt":"2026-10-06T08:14:59.743Z","updatedAt":"2026-10-06T08:14:59.743Z"}
+=> PASS (expected 201, got 201)
+BOOKING_ID="9321d58f-7a0c-4cc5-8d69-302c63f4751d"
+
+## 4. Get one booking - expect 200
+$ curl -i "$BASE_URL/bookings/$BOOKING_ID"
+HTTP/1.1 200 OK
+Date: Tue, 06 Oct 2026 08:15:00 GMT
+Content-Type: application/json
+Content-Length: 279
+Connection: keep-alive
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=d19pd2eUH8oXGYrnZ2SXjD4OFxe7O1laF1XQIL%2Fl%2FzA48jri9UVt1dGFqza2yrnK%2Bjo%2BM%2F2rGNQXoGSEjoI0CROxr6FDpDw7Jel%2Bb99jJL6uQxjl2ITFZL1Y35jua1UcKZpMpTN8LPhvu07qeRHm6cKfnvHSBVGVRK6YT%2F4%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a463373af8cd0855-HKG
+alt-svc: h3=":443"; ma=86400
+
+{"id":"9321d58f-7a0c-4cc5-8d69-302c63f4751d","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation","createdAt":"2026-10-06T08:14:59.743Z","updatedAt":"2026-10-06T08:14:59.743Z"}
+=> PASS (expected 200, got 200)
+
+## 5. Update a booking - expect 200
+$ curl -i -X PATCH "$BASE_URL/bookings/$BOOKING_ID" -H "Content-Type: application/json" -d '{
+    "equipmentId": "eq-1",
+    "borrowerName": "Somchai Jaidee",
+    "startAt": "2026-10-20T12:00:00.000Z",
+    "endAt": "2026-10-20T14:00:00.000Z",
+    "purpose": "Updated class presentation"
+  }'
+HTTP/1.1 200 OK
+Date: Tue, 06 Oct 2026 08:15:00 GMT
+Content-Type: application/json
+Content-Length: 287
+Connection: keep-alive
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=pJ7EJpO49DrEhN7N4J9ySwghJNEdXWoJvbxNrdi51bByXv7mfn5nxXAldGRfl%2B6dqcqkn3jCJXVG3kL%2Fy7xV36mNYDE1w73tu%2Fnxb3gJhsQ%2FKOhx3w5PcxwPOabAgGNHbdXQlVVXELZ32L7jFmGhmst2dC5uezrSQtab1PE%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a463373ddb95f875-SIN
+alt-svc: h3=":443"; ma=86400
+
+{"id":"9321d58f-7a0c-4cc5-8d69-302c63f4751d","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T12:00:00.000Z","endAt":"2026-10-20T14:00:00.000Z","purpose":"Updated class presentation","createdAt":"2026-10-06T08:14:59.743Z","updatedAt":"2026-10-06T08:15:00.817Z"}
+=> PASS (expected 200, got 200)
+
+## 6. Invalid time range - expect 400
+$ curl -i -X POST "$BASE_URL/bookings" -H "Content-Type: application/json" -d '{
+    "equipmentId": "eq-1",
+    "borrowerName": "Somchai Jaidee",
+    "startAt": "2026-10-21T11:00:00.000Z",
+    "endAt": "2026-10-21T09:00:00.000Z",
+    "purpose": "Invalid time range test"
+  }'
+HTTP/1.1 400 Bad Request
+Date: Tue, 06 Oct 2026 08:15:01 GMT
+Content-Type: application/json
+Content-Length: 40
+Connection: keep-alive
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=es%2Bu6AYU2Rnn%2BpvtMHvO6GRvtls8oi2IU9ogPn0OA%2Bb0NDcAau1dw8c54N4qN2pMDvq45ZqP4cYcBsKJBT4FuaBLeyL308wUZQW1PA0uCbMR6Oy29U2ArjWxt8IL%2F%2FRt3Ju35hql3%2BXu1P1jE2L9cf5eLTsLDVeJDEVyPE0%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a46337417d1ce1a3-NRT
+alt-svc: h3=":443"; ma=86400
+
+{"error":"startAt must be before endAt"}
+=> PASS (expected 400, got 400)
+
+## 7. Overlapping booking - expect 409
+$ curl -i -X POST "$BASE_URL/bookings" -H "Content-Type: application/json" -d '{
+    "equipmentId": "eq-1",
+    "borrowerName": "Suda Dee",
+    "startAt": "2026-10-20T12:30:00.000Z",
+    "endAt": "2026-10-20T13:30:00.000Z",
+    "purpose": "Conflict test"
+  }'
+HTTP/1.1 409 Conflict
+Date: Tue, 06 Oct 2026 08:15:02 GMT
+Content-Type: application/json
+Content-Length: 149
+Connection: keep-alive
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Hb0m8TGzaJ9Q3Dd6MGvYW5zMlqcf%2BQk%2Bgp946zWQh%2BpLp94Xi7ePiw2eynl103tpIkLkXZHGSW3UTv8jlUyuSN5oZPsdMVfu5suPqqTYUqUQEmQlrbpzO8qyjeD51ZqDnVOV1VacBuWmbEJ5%2FjXcgxsmDt5rQB5EzKsWrag%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a46337445b9285f3-HKG
+alt-svc: h3=":443"; ma=86400
+
+{"error":"Equipment eq-1 is already booked from 2026-10-20T12:00:00.000Z to 2026-10-20T14:00:00.000Z (booking 9321d58f-7a0c-4cc5-8d69-302c63f4751d)"}
+=> PASS (expected 409, got 409)
+
+## 8. Missing booking - expect 404
+$ curl -i "$BASE_URL/bookings/not-found"
+HTTP/1.1 404 Not Found
+Date: Tue, 06 Oct 2026 08:15:02 GMT
+Content-Type: application/json
+Content-Length: 29
+Connection: keep-alive
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=H%2BcF%2Fj0vebDaABV%2B8ooHgvEilwtjkiBn8UkAZmwXT5WtkykmtyvofchsP5ktpj3kLg16XOU4Rzfj8%2FIYUuFUTDj6XwBjdW3OX9HDN2fcNK5Gh5gndSfvzt5J31qUWfdchRG97fLkMxvC2dIUOq8CpEXd6B9eMDaZ1PSkmyg%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a4633747ea9987fc-SIN
+alt-svc: h3=":443"; ma=86400
+
+{"error":"Booking not found"}
+=> PASS (expected 404, got 404)
+
+## 9. Delete a booking - expect 204
+$ curl -i -X DELETE "$BASE_URL/bookings/$BOOKING_ID"
+HTTP/1.1 204 No Content
+Date: Tue, 06 Oct 2026 08:15:03 GMT
+Connection: keep-alive
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=bsqT00scbDPcHPpcN5UZ3A49dH0%2BJRu%2B6E05Z75pEhA0PL%2B6N%2BvSjwk359HztQijtQIBvQ%2FC1XbDfJwOSSqlCgLvOUpD2gosOx9XwtR7xtCynFaP5cOlQpbGF%2B9YC2zzMJJyaJO2X28C6aMjCRmLsbh6u7a0oXSlU45WsdM%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a463374b8c7b5ebc-NRT
+alt-svc: h3=":443"; ma=86400
+=> PASS (expected 204, got 204)
+
+Summary: 9 passed, 0 failed, 9 steps - Base API URL: https://equipment-booking-api.skywatch.workers.dev/api

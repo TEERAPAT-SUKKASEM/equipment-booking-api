@@ -1,0 +1,13 @@
+Concurrency test against the DEPLOYED API (Cloudflare Workers + remote D1).
+Date: 2026-10-06T08:15:40Z   Commit: c668a25
+
+Concurrency test - Base API URL: https://equipment-booking-api.skywatch.workers.dev/api
+
+CREATE: 20 identical POST requests for one free slot, 30 rounds (expect exactly one 201 per round)
+  round 1: {"201":1,"409":19} ok
+
+UPDATE: two bookings are moved onto the same free slot at the same moment, 30 rounds (expect one 200 and one 409)
+  round 1: {"200":1,"409":1} ok
+
+Result: PASS - 0 of 60 rounds produced a double booking
+exit code: 0

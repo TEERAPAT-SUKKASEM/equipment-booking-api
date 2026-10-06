@@ -1,0 +1,153 @@
+Campus Equipment Booking API - cURL test run
+Base API URL: https://equipment-booking-api.skywatch.workers.dev/api
+Date:         2026-10-06T08:15:03Z
+Commit:       c668a25
+
+### Case 1: List equipment (expect 200)
+$ curl -X GET https://equipment-booking-api.skywatch.workers.dev/api/equipment
+HTTP 200 application/json
+[{"id":"eq-1","name":"Projector A","location":"Building 1"},{"id":"eq-2","name":"Camera B","location":"Building 2"},{"id":"eq-3","name":"Meeting Room C","location":"Library, 2nd floor"}]
+=> PASS
+
+### Case 2: Create a booking (expect 201)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation"}'
+HTTP 201 application/json
+{"id":"2936197f-8a24-4144-ae3b-bfa18832ae95","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation","createdAt":"2026-10-06T08:15:03.973Z","updatedAt":"2026-10-06T08:15:03.973Z"}
+=> PASS
+
+### Case 3: List bookings (expect 200)
+$ curl -X GET https://equipment-booking-api.skywatch.workers.dev/api/bookings
+HTTP 200 application/json
+[{"id":"2936197f-8a24-4144-ae3b-bfa18832ae95","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation","createdAt":"2026-10-06T08:15:03.973Z","updatedAt":"2026-10-06T08:15:03.973Z"}]
+=> PASS
+
+### Case 4: Get one booking (expect 200)
+$ curl -X GET https://equipment-booking-api.skywatch.workers.dev/api/bookings/2936197f-8a24-4144-ae3b-bfa18832ae95
+HTTP 200 application/json
+{"id":"2936197f-8a24-4144-ae3b-bfa18832ae95","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation","createdAt":"2026-10-06T08:15:03.973Z","updatedAt":"2026-10-06T08:15:03.973Z"}
+=> PASS
+
+### Case 5: Update one field (partial PATCH) (expect 200)
+$ curl -X PATCH https://equipment-booking-api.skywatch.workers.dev/api/bookings/2936197f-8a24-4144-ae3b-bfa18832ae95 -H 'Content-Type: application/json' -d '{"purpose":"Final project presentation"}'
+HTTP 200 application/json
+{"id":"2936197f-8a24-4144-ae3b-bfa18832ae95","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Final project presentation","createdAt":"2026-10-06T08:15:03.973Z","updatedAt":"2026-10-06T08:15:06.162Z"}
+=> PASS
+
+### Case 6: Create an overlapping booking for the same equipment (expect 409)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-1","borrowerName":"Malee Srisuk","startAt":"2026-10-20T10:00:00.000Z","endAt":"2026-10-20T12:00:00.000Z","purpose":"Club meeting"}'
+HTTP 409 application/json
+{"error":"Equipment eq-1 is already booked from 2026-10-20T09:00:00.000Z to 2026-10-20T11:00:00.000Z (booking 2936197f-8a24-4144-ae3b-bfa18832ae95)"}
+=> PASS
+
+### Case 7: Create a back-to-back booking (starts when the first one ends) (expect 201)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-1","borrowerName":"Malee Srisuk","startAt":"2026-10-20T11:00:00.000Z","endAt":"2026-10-20T13:00:00.000Z","purpose":"Club meeting"}'
+HTTP 201 application/json
+{"id":"cf0d6b97-0d19-4bd2-b471-92f829427a29","equipmentId":"eq-1","borrowerName":"Malee Srisuk","startAt":"2026-10-20T11:00:00.000Z","endAt":"2026-10-20T13:00:00.000Z","purpose":"Club meeting","createdAt":"2026-10-06T08:15:06.936Z","updatedAt":"2026-10-06T08:15:06.936Z"}
+=> PASS
+
+### Case 8: Create the same time slot on different equipment (expect 201)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-2","borrowerName":"Anan Wongsa","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Photo shoot"}'
+HTTP 201 application/json
+{"id":"5f699280-640f-4a30-a458-5230efdcab2b","equipmentId":"eq-2","borrowerName":"Anan Wongsa","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Photo shoot","createdAt":"2026-10-06T08:15:07.353Z","updatedAt":"2026-10-06T08:15:07.353Z"}
+=> PASS
+
+### Case 9: Update a booking so that it overlaps another one (expect 409)
+$ curl -X PATCH https://equipment-booking-api.skywatch.workers.dev/api/bookings/cf0d6b97-0d19-4bd2-b471-92f829427a29 -H 'Content-Type: application/json' -d '{"startAt":"2026-10-20T10:30:00.000Z"}'
+HTTP 409 application/json
+{"error":"Equipment eq-1 is already booked from 2026-10-20T09:00:00.000Z to 2026-10-20T11:00:00.000Z (booking 2936197f-8a24-4144-ae3b-bfa18832ae95)"}
+=> PASS
+
+### Case 10: Update a booking inside its own time range (no conflict with itself) (expect 200)
+$ curl -X PATCH https://equipment-booking-api.skywatch.workers.dev/api/bookings/2936197f-8a24-4144-ae3b-bfa18832ae95 -H 'Content-Type: application/json' -d '{"endAt":"2026-10-20T10:30:00.000Z"}'
+HTTP 200 application/json
+{"id":"2936197f-8a24-4144-ae3b-bfa18832ae95","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T10:30:00.000Z","purpose":"Final project presentation","createdAt":"2026-10-06T08:15:03.973Z","updatedAt":"2026-10-06T08:15:08.482Z"}
+=> PASS
+
+### Case 11: Move a booking to equipment that is busy at that time (expect 409)
+$ curl -X PATCH https://equipment-booking-api.skywatch.workers.dev/api/bookings/5f699280-640f-4a30-a458-5230efdcab2b -H 'Content-Type: application/json' -d '{"equipmentId":"eq-1"}'
+HTTP 409 application/json
+{"error":"Equipment eq-1 is already booked from 2026-10-20T09:00:00.000Z to 2026-10-20T10:30:00.000Z (booking 2936197f-8a24-4144-ae3b-bfa18832ae95)"}
+=> PASS
+
+### Case 12: Create with startAt after endAt (expect 400)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-21T11:00:00.000Z","endAt":"2026-10-21T09:00:00.000Z","purpose":"Wrong order"}'
+HTTP 400 application/json
+{"error":"startAt must be before endAt"}
+=> PASS
+
+### Case 13: Create without borrowerName (expect 400)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-1","startAt":"2026-10-21T09:00:00.000Z","endAt":"2026-10-21T11:00:00.000Z","purpose":"Missing field"}'
+HTTP 400 application/json
+{"error":"borrowerName is required"}
+=> PASS
+
+### Case 14: Create with a timestamp that is not ISO 8601 (expect 400)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"tomorrow morning","endAt":"2026-10-21T11:00:00.000Z","purpose":"Bad timestamp"}'
+HTTP 400 application/json
+{"error":"startAt must be an ISO 8601 date-time with a time zone between the years 2000 and 2100, e.g. 2026-10-20T09:00:00.000Z"}
+=> PASS
+
+### Case 15: Create with malformed JSON (expect 400)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId": '
+HTTP 400 application/json
+{"error":"Request body must be valid JSON"}
+=> PASS
+
+### Case 16: Create with a timestamp outside the supported years 2000-2100 (this one is year 10000 in UTC) (expect 400)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"9999-12-31T23:30:00-01:00","endAt":"9999-12-31T23:00:00Z","purpose":"Out of range"}'
+HTTP 400 application/json
+{"error":"startAt must be an ISO 8601 date-time with a time zone between the years 2000 and 2100, e.g. 2026-10-20T09:00:00.000Z"}
+=> PASS
+
+### Case 17: Create with a borrowerName longer than 100 characters (expect 400)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-1","borrowerName":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","startAt":"2026-10-21T09:00:00.000Z","endAt":"2026-10-21T11:00:00.000Z","purpose":"Too long"}'
+HTTP 400 application/json
+{"error":"borrowerName must be at most 100 characters"}
+=> PASS
+
+### Case 18: Create for equipment that does not exist (expect 404)
+$ curl -X POST https://equipment-booking-api.skywatch.workers.dev/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-999","borrowerName":"Somchai Jaidee","startAt":"2026-10-21T09:00:00.000Z","endAt":"2026-10-21T11:00:00.000Z","purpose":"Unknown equipment"}'
+HTTP 404 application/json
+{"error":"Equipment not found: eq-999"}
+=> PASS
+
+### Case 19: Get a booking that does not exist (expect 404)
+$ curl -X GET https://equipment-booking-api.skywatch.workers.dev/api/bookings/does-not-exist
+HTTP 404 application/json
+{"error":"Booking not found"}
+=> PASS
+
+### Case 20: Update a booking that does not exist (expect 404)
+$ curl -X PATCH https://equipment-booking-api.skywatch.workers.dev/api/bookings/does-not-exist -H 'Content-Type: application/json' -d '{"purpose":"Nothing to update"}'
+HTTP 404 application/json
+{"error":"Booking not found"}
+=> PASS
+
+### Case 21: Delete a booking (expect 204)
+$ curl -X DELETE https://equipment-booking-api.skywatch.workers.dev/api/bookings/2936197f-8a24-4144-ae3b-bfa18832ae95
+HTTP 204 
+=> PASS
+
+### Case 22: Get the deleted booking (expect 404)
+$ curl -X GET https://equipment-booking-api.skywatch.workers.dev/api/bookings/2936197f-8a24-4144-ae3b-bfa18832ae95
+HTTP 404 application/json
+{"error":"Booking not found"}
+=> PASS
+
+### Case 23: Delete the same booking again (expect 404)
+$ curl -X DELETE https://equipment-booking-api.skywatch.workers.dev/api/bookings/2936197f-8a24-4144-ae3b-bfa18832ae95
+HTTP 404 application/json
+{"error":"Booking not found"}
+=> PASS
+
+### Case 24: Clean up: delete the second booking (expect 204)
+$ curl -X DELETE https://equipment-booking-api.skywatch.workers.dev/api/bookings/cf0d6b97-0d19-4bd2-b471-92f829427a29
+HTTP 204 
+=> PASS
+
+### Case 25: Clean up: delete the third booking (expect 204)
+$ curl -X DELETE https://equipment-booking-api.skywatch.workers.dev/api/bookings/5f699280-640f-4a30-a458-5230efdcab2b
+HTTP 204 
+=> PASS
+
+Summary: 25 passed, 0 failed, 25 cases - Base API URL: https://equipment-booking-api.skywatch.workers.dev/api
