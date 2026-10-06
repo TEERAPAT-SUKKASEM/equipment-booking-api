@@ -1,0 +1,20 @@
+{
+  "name": "equipment-booking-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Campus Equipment Booking API (Hono + Cloudflare D1) - midterm practical lab test",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "db:setup": "wrangler d1 execute equipment-booking-db --local --file=./db/schema.sql",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261006.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.147.0"
+  }
+}
