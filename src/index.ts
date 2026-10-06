@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
-import { HTTPException } from 'hono/http-exception'
 
 type Bindings = { DB: D1Database }
 type AppContext = Context<{ Bindings: Bindings }>
@@ -17,17 +16,8 @@ type Booking = BookingInput & { id: string; createdAt: string; updatedAt: string
 
 const BOOKING_FIELDS = ['equipmentId', 'borrowerName', 'startAt', 'endAt', 'purpose'] as const
 
-// The database uses snake_case columns; the API contract uses camelCase fields.
-const SELECT_BOOKING = `
-  SELECT id,
-         equipment_id  AS equipmentId,
-         borrower_name AS borrowerName,
-         start_at      AS startAt,
-         end_at        AS endAt,
-         purpose,
-         created_at    AS createdAt,
-         updated_at    AS updatedAt
-  FROM bookings`
+// Maximum length of each text field, in characters.
+const TEXT_LIMITS = { equipmentId: 50, borrowerName: 100, purpose: 500 } as const
 
 // Every expected failure is thrown as an ApiError and turned into { "error": ... } in one place (app.onError).
 class ApiError extends Error {
@@ -44,6 +34,9 @@ class ApiError extends Error {
 // ISO 8601 date-time with an explicit offset, e.g. 2026-10-20T09:00:00.000Z or 2026-10-20T16:00:00+07:00
 const ISO_DATE_TIME =
   /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d{1,3})?)?(Z|[+-]([01]\d|2[0-3]):[0-5]\d)$/
+const MIN_YEAR = 2000
+const MAX_YEAR = 2100
+const TIMESTAMP_RULE = `must be an ISO 8601 date-time with a time zone between the years ${MIN_YEAR} and ${MAX_YEAR}, e.g. 2026-10-20T09:00:00.000Z`
 
 // Returns the timestamp normalised to UTC (YYYY-MM-DDTHH:mm:ss.sssZ), or null when it is not valid.
 // One fixed format means that comparing two stored strings is the same as comparing the two moments in time.
@@ -59,24 +52,36 @@ function parseTimestamp(value: unknown): string | null {
 
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
+
+  // Outside 0000-9999 the UTC text gets a different shape ("+010000-..."), and string comparison would
+  // no longer match time order. A booking system only needs a sensible range, so limit the year.
+  const utcYear = date.getUTCFullYear()
+  if (utcYear < MIN_YEAR || utcYear > MAX_YEAR) return null
+
   return date.toISOString()
 }
 
 function validateBooking(data: Record<string, unknown>): BookingInput {
-  const text = {} as Record<'equipmentId' | 'borrowerName' | 'purpose', string>
+  for (const field of BOOKING_FIELDS) {
+    if (data[field] === undefined || data[field] === null) throw new ApiError(400, `${field} is required`)
+  }
+
+  const text = {} as Record<keyof typeof TEXT_LIMITS, string>
   for (const field of ['equipmentId', 'borrowerName', 'purpose'] as const) {
     const value = data[field]
     if (typeof value !== 'string' || value.trim() === '') {
-      throw new ApiError(400, `${field} is required and must be a non-empty string`)
+      throw new ApiError(400, `${field} must be a non-empty string`)
+    }
+    if (value.trim().length > TEXT_LIMITS[field]) {
+      throw new ApiError(400, `${field} must be at most ${TEXT_LIMITS[field]} characters`)
     }
     text[field] = value.trim()
   }
 
-  const example = 'an ISO 8601 date-time with a time zone, e.g. 2026-10-20T09:00:00.000Z'
   const startAt = parseTimestamp(data.startAt)
-  if (!startAt) throw new ApiError(400, `startAt is required and must be ${example}`)
+  if (!startAt) throw new ApiError(400, `startAt ${TIMESTAMP_RULE}`)
   const endAt = parseTimestamp(data.endAt)
-  if (!endAt) throw new ApiError(400, `endAt is required and must be ${example}`)
+  if (!endAt) throw new ApiError(400, `endAt ${TIMESTAMP_RULE}`)
   if (startAt >= endAt) throw new ApiError(400, 'startAt must be before endAt')
 
   return { ...text, startAt, endAt }
@@ -95,7 +100,45 @@ async function readJsonObject(c: AppContext): Promise<Record<string, unknown>> {
   return body as Record<string, unknown>
 }
 
-// ---------- database helpers (all values are bound as parameters, never concatenated into SQL) ----------
+// ---------- SQL (constant text only; request values always go through .bind(), never into the SQL string) ----------
+
+// The database uses snake_case columns; the API contract uses camelCase fields.
+const SELECT_BOOKING = `
+  SELECT id,
+         equipment_id  AS equipmentId,
+         borrower_name AS borrowerName,
+         start_at      AS startAt,
+         end_at        AS endAt,
+         purpose,
+         created_at    AS createdAt,
+         updated_at    AS updatedAt
+  FROM bookings`
+
+// The overlap rule, written once and used by create, update and the conflict lookup.
+//   ?1 = equipment id, ?2 = new start, ?3 = new end, ?4 = id of the booking being written
+// A booking occupies [start, end). Another booking of the same equipment overlaps when it starts
+// before the new one ends AND ends after the new one starts. A booking never conflicts with itself (?4).
+const OVERLAP = `equipment_id = ?1 AND start_at < ?3 AND end_at > ?2 AND id <> ?4`
+
+// Check and write are ONE statement: the row is written only if no overlapping booking exists.
+// Two requests that arrive at the same moment therefore cannot both pass the check.
+//   ?5 = borrower name, ?6 = purpose, ?7 = current time
+const INSERT_IF_FREE = `
+  INSERT INTO bookings (id, equipment_id, borrower_name, start_at, end_at, purpose, created_at, updated_at)
+  SELECT ?4, ?1, ?5, ?2, ?3, ?6, ?7, ?7
+  WHERE NOT EXISTS (SELECT 1 FROM bookings WHERE ${OVERLAP})`
+
+const UPDATE_IF_FREE = `
+  UPDATE bookings
+  SET equipment_id = ?1, start_at = ?2, end_at = ?3, borrower_name = ?5, purpose = ?6, updated_at = ?7
+  WHERE id = ?4
+    AND NOT EXISTS (SELECT 1 FROM bookings WHERE ${OVERLAP})`
+
+// The values for ?1 ... ?7, in that order, for INSERT_IF_FREE and UPDATE_IF_FREE.
+function writeValues(input: BookingInput, id: string): string[] {
+  const now = new Date().toISOString()
+  return [input.equipmentId, input.startAt, input.endAt, id, input.borrowerName, input.purpose, now]
+}
 
 async function findBooking(db: D1Database, id: string): Promise<Booking | null> {
   return db.prepare(`${SELECT_BOOKING} WHERE id = ?`).bind(id).first<Booking>()
@@ -103,7 +146,7 @@ async function findBooking(db: D1Database, id: string): Promise<Booking | null> 
 
 async function requireBooking(db: D1Database, id: string): Promise<Booking> {
   const booking = await findBooking(db, id)
-  if (!booking) throw new ApiError(404, `Booking not found: ${id}`)
+  if (!booking) throw new ApiError(404, 'Booking not found')
   return booking
 }
 
@@ -112,24 +155,14 @@ async function requireEquipment(db: D1Database, equipmentId: string): Promise<vo
   if (!equipment) throw new ApiError(404, `Equipment not found: ${equipmentId}`)
 }
 
-// A booking occupies [startAt, endAt). Two bookings of the same equipment overlap when each one
-// starts before the other one ends. On update, the booking itself is excluded from the comparison.
-async function requireNoOverlap(db: D1Database, input: BookingInput, excludeId: string | null): Promise<void> {
-  const conflict = await db
-    .prepare(
-      `SELECT id, start_at AS startAt, end_at AS endAt
-       FROM bookings
-       WHERE equipment_id = ?1 AND start_at < ?3 AND end_at > ?2 AND id IS NOT ?4
-       LIMIT 1`
-    )
-    .bind(input.equipmentId, input.startAt, input.endAt, excludeId)
+// Builds the 409 error after a write was refused, naming the booking that is in the way.
+async function conflictError(db: D1Database, input: BookingInput, id: string): Promise<ApiError> {
+  const other = await db
+    .prepare(`SELECT id, start_at AS startAt, end_at AS endAt FROM bookings WHERE ${OVERLAP} LIMIT 1`)
+    .bind(input.equipmentId, input.startAt, input.endAt, id)
     .first<{ id: string; startAt: string; endAt: string }>()
-  if (conflict) {
-    throw new ApiError(
-      409,
-      `Equipment ${input.equipmentId} is already booked from ${conflict.startAt} to ${conflict.endAt} (booking ${conflict.id})`
-    )
-  }
+  const when = other ? `from ${other.startAt} to ${other.endAt} (booking ${other.id})` : 'at that time'
+  return new ApiError(409, `Equipment ${input.equipmentId} is already booked ${when}`)
 }
 
 // ---------- routes ----------
@@ -154,17 +187,10 @@ app.post('/bookings', async (c) => {
   const db = c.env.DB
   const input = validateBooking(await readJsonObject(c))
   await requireEquipment(db, input.equipmentId)
-  await requireNoOverlap(db, input, null)
 
   const id = crypto.randomUUID()
-  const now = new Date().toISOString()
-  await db
-    .prepare(
-      `INSERT INTO bookings (id, equipment_id, borrower_name, start_at, end_at, purpose, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .bind(id, input.equipmentId, input.borrowerName, input.startAt, input.endAt, input.purpose, now, now)
-    .run()
+  const result = await db.prepare(INSERT_IF_FREE).bind(...writeValues(input, id)).run()
+  if (result.meta.changes === 0) throw await conflictError(db, input, id)
 
   return c.json(await requireBooking(db, id), 201, { Location: `/api/bookings/${id}` })
 })
@@ -185,24 +211,19 @@ app.patch('/bookings/:id', async (c) => {
   }
   const input = validateBooking({ ...existing, ...changes })
   await requireEquipment(db, input.equipmentId)
-  await requireNoOverlap(db, input, id)
 
-  await db
-    .prepare(
-      `UPDATE bookings
-       SET equipment_id = ?, borrower_name = ?, start_at = ?, end_at = ?, purpose = ?, updated_at = ?
-       WHERE id = ?`
-    )
-    .bind(input.equipmentId, input.borrowerName, input.startAt, input.endAt, input.purpose, new Date().toISOString(), id)
-    .run()
+  const result = await db.prepare(UPDATE_IF_FREE).bind(...writeValues(input, id)).run()
+  if (result.meta.changes === 0) {
+    await requireBooking(db, id) // 404 if another request deleted this booking in the meantime
+    throw await conflictError(db, input, id)
+  }
 
   return c.json(await requireBooking(db, id))
 })
 
 app.delete('/bookings/:id', async (c) => {
-  const id = c.req.param('id')
-  const result = await c.env.DB.prepare('DELETE FROM bookings WHERE id = ?').bind(id).run()
-  if (result.meta.changes === 0) throw new ApiError(404, `Booking not found: ${id}`)
+  const result = await c.env.DB.prepare('DELETE FROM bookings WHERE id = ?').bind(c.req.param('id')).run()
+  if (result.meta.changes === 0) throw new ApiError(404, 'Booking not found')
   return c.body(null, 204)
 })
 
@@ -212,8 +233,10 @@ app.notFound((c) => c.json({ error: `Route not found: ${c.req.method} ${c.req.pa
 
 app.onError((err, c) => {
   if (err instanceof ApiError) return c.json({ error: err.message }, err.status)
-  if (err instanceof HTTPException) return c.json({ error: err.message }, err.status)
   console.error(err)
+  if (err.message.includes('no such table')) {
+    return c.json({ error: 'Database is not set up. Run: npm run db:setup' }, 500)
+  }
   return c.json({ error: 'Internal server error' }, 500)
 })
 

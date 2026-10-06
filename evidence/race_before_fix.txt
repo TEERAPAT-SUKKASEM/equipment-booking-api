@@ -1,0 +1,16 @@
+Code under test: git tag v1-snapshot (9e33d01) - src/index.ts unchanged since the snapshot: yes
+Date: 2026-10-06T07:25:03Z
+
+Concurrency test - Base API URL: http://localhost:8787/api
+
+CREATE: 20 identical POST requests for one free slot, 30 rounds (expect exactly one 201 per round)
+  round 1: {"201":1,"409":19} ok
+
+UPDATE: two bookings are moved onto the same free slot at the same moment, 30 rounds (expect one 200 and one 409)
+  round 1: {"200":1,"409":1} ok
+  round 10: {"200":2} <-- DOUBLE BOOKING
+  round 18: {"200":2} <-- DOUBLE BOOKING
+  round 26: {"200":2} <-- DOUBLE BOOKING
+
+Result: FAIL - 3 of 60 rounds produced a double booking
+exit code: 1
