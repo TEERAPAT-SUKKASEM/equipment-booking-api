@@ -105,8 +105,8 @@ committed them (commit `c3d7a07`, 15:13).
 
 **What the AI did**
 
-- Created the private GitHub repository `TEERAPAT-SUKKASEM/equipment-booking-api` and pushed all commits
-  and the `v1-snapshot` tag.
+- Created the GitHub repository `TEERAPAT-SUKKASEM/equipment-booking-api` and pushed all commits and the
+  `v1-snapshot` tag. It was private at first; at 15:20 the assistant asked me and I chose to make it public.
 - Started `wrangler login`, which I approved in the browser. Then it created a remote D1 database,
   loaded `db/schema.sql` into it and deployed the Worker (commit `c668a25`):
   `https://equipment-booking-api.skywatch.workers.dev/api`
