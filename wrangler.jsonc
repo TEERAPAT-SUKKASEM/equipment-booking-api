@@ -6,10 +6,10 @@
   "send_metrics": false,
   "d1_databases": [
     {
-      // Local development only: the id is a placeholder, the data lives in .wrangler/state
+      // The id is the deployed D1 database. "wrangler dev" does not touch it: local data lives in .wrangler/state
       "binding": "DB",
       "database_name": "equipment-booking-db",
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "267923b3-f167-4195-95f3-94fef0636fe4"
     }
   ]
 }
