@@ -21,7 +21,8 @@
 | Other checks after the fixes (new validation rules, PowerShell example, schema, missing database) | [other_checks.txt](other_checks.txt) | all as expected |
 | Clean clone: `git clone`, then the README commands, then all three test scripts (on port 8790) | [clean_clone_run.txt](clean_clone_run.txt) | install and setup exit 0; 9 of 9, 25 of 25, concurrency PASS |
 | What the AI reviewers reported, with the verifier's verdict for each finding | [ai_review_summary.md](ai_review_summary.md) | 40 reported, 21 confirmed (11 distinct issues) |
-| Final checks from PowerShell on the final commit, run by the AI assistant at the student's request | [final_checks_by_ai.txt](final_checks_by_ai.txt) | `200`, `201`, `409`, `404` as expected |
+| Final checks from PowerShell on commit `74b0f9a`, run by the AI assistant at the student's request | [final_checks_by_ai.txt](final_checks_by_ai.txt) | `200`, `201`, `409`, `404` as expected |
+| Commit history with times, and the first-version snapshot (`v1-snapshot`) | [git_history.txt](git_history.txt) | design 13:39, first version 13:42, fixes from 13:50 |
 
 Every error response in these files is JSON of the form `{ "error": "..." }`.
 

@@ -1,0 +1,24 @@
+Git history of this repository (generated with git; times are local, UTC+7).
+The first version is the commit tagged v1-snapshot. View it with:  git show v1-snapshot --stat   or   git show v1-snapshot:src/index.ts
+
+$ git log --reverse --format='%h  %ad  %s' --date=format:'%Y-%m-%d %H:%M:%S %z'
+ff38e6a  2026-10-06 13:39:36 +0700  docs: API contract, assumptions and data model (design before implementation)
+0c407c0  2026-10-06 13:42:30 +0700  feat: first version of the booking API (v1 snapshot before the Quality Gate)
+f58e4a0  2026-10-06 13:50:39 +0700  fix(docs): README said Node 20+, but wrangler 4.147 requires Node >= 22
+382c361  2026-10-06 13:51:02 +0700  test: curl test script (23 cases) and db:reset script
+e621a20  2026-10-06 14:28:11 +0700  fix: make the overlap check atomic; limit timestamp years and text lengths
+e094dfb  2026-10-06 14:38:58 +0700  docs: Quality Gate review, evidence, updated contract, schema, README and AI log
+aa17043  2026-10-06 14:45:04 +0700  docs: clean-clone evidence, AI review summary, corrections from the final check
+74b0f9a  2026-10-06 14:45:51 +0700  docs: own-verification steps start with npm run dev
+e1a6016  2026-10-06 14:58:58 +0700  docs: final checks run by the AI assistant, recorded as such
+
+$ git show -s --format='tag v1-snapshot -> commit %h, committed %ci' 'v1-snapshot^{commit}'
+tag v1-snapshot -> commit 0c407c0, committed 2026-10-06 13:42:30 +0700
+
+$ git diff --stat v1-snapshot HEAD -- src db
+ db/reset.sql  |   4 ++
+ db/schema.sql |   5 ++-
+ src/index.ts  | 139 ++++++++++++++++++++++++++++++++++------------------------
+ 3 files changed, 88 insertions(+), 60 deletions(-)
+
+(This file was added in the commit after the last one listed above.)
