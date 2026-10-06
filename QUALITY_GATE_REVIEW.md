@@ -1,6 +1,6 @@
 # Quality Gate Review
 
-This record was drafted by the AI assistant from the review results (see [AI_LOG.md](AI_LOG.md), entries 2–6).
+This record was drafted by the AI assistant from the review results (see [AI_LOG.md](AI_LOG.md), entries 2–7).
 Each finding below was reproduced, by a second AI agent or by a recorded test, and each fix has evidence
 in [evidence/](evidence/README.md). The list of everything the AI reviewers reported is in
 [evidence/ai_review_summary.md](evidence/ai_review_summary.md).
@@ -44,7 +44,7 @@ in [evidence/](evidence/README.md). The list of everything the AI reviewers repo
 | **6. Accuracy** (stored data) | `PRIMARY KEY` columns accepted `NULL`: SQLite allows that for non-integer keys. | `NOT NULL` written on both primary keys in `db/schema.sql`. | [other_checks.txt](evidence/other_checks.txt) block 3: `NOT NULL constraint failed: equipment.id`. Commit `e621a20`. |
 | **4. Reasoning** — "I can explain how my overlap check works for both create and update" | The v1 query was hard to explain: numbered placeholders used out of order, `id IS NOT ?4` relying on a `NULL` during create, and SCHEMA.md showed a different query text than the code. | The rule is written once (`OVERLAP` in `src/index.ts`) with a legend for each placeholder, and reused by create, update and the conflict message. SCHEMA.md shows the same text plus a table of which layer enforces which rule. | `src/index.ts` (`OVERLAP`, `INSERT_IF_FREE`, `UPDATE_IF_FREE`), SCHEMA.md "Business rule". All 25 cases still pass. |
 | **4. Reasoning** — "why I selected each status code", "limitations or assumptions" | `404` for an unknown `equipmentId` is the one status code the brief can be read two ways on, and the contract listed it only as an assumption. Some wording did not match the real behaviour (V5 said "change", trimming and the timestamp format were not described). | The contract now gives both readings, why `404` was kept and where the one-line change would be; added the exact timestamp format, A11, A12 and a "Known limitations" section. | API_CONTRACT.md: "The one debatable case", "Timestamp format", "Known limitations". Case 18 → `404`. |
-| **8. You Own It** — "`AI_LOG.md` truthfully records … how I checked it" | The log listed only checks run by the AI; "what I verified myself" was an empty placeholder. | AI checks and personal checks are separate sections now. The personal checks, with the command and what to look for, are listed in AI_LOG.md to be done by hand. | AI_LOG.md, "My own verification". |
+| **8. You Own It** — "`AI_LOG.md` truthfully records … how I checked it" | The log listed only checks run by the AI; "what I verified myself" was an empty placeholder. | AI checks and personal checks are separate sections now. The final checks were run by the AI assistant at my request and are labelled as such; a box under "My own verification" is ticked only for something I did myself. | AI_LOG.md, "Final checks" and "My own verification"; [final_checks_by_ai.txt](evidence/final_checks_by_ai.txt). |
 
 ## Reviewed and deliberately left unchanged
 
@@ -77,9 +77,10 @@ Reported by the reviewers, checked, and kept as they are, because the brief does
 
 ## Submission decision
 
-Technical state: all required work is present and all recorded tests pass.
+Technical state: all required work is present and all recorded tests pass. The final checks were run by
+the AI assistant at my request (AI_LOG.md entry 7).
 
-Decision (ticked by me after my own verification in AI_LOG.md):
+Decision (mine to tick; `READY` also means that I can explain the submission):
 
 - [ ] **READY**
 - [ ] REVIEW WITH INSTRUCTOR

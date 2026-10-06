@@ -1,0 +1,27 @@
+Final checks, run by the AI assistant at the student's request (AI_LOG.md entry 7), not by the student.
+Shell: PowerShell 7, curl.exe 8.21.0. Base API URL: http://localhost:8787/api
+Date: 2026-10-06T07:54:31Z   Commit: 74b0f9a   Database reset with npm run db:reset before the run.
+
+## Check 2 - list equipment (expect 200 and three records)
+PS> curl.exe -i http://localhost:8787/api/equipment
+HTTP/1.1 200 OK
+Content-Type: application/json
+[{"id":"eq-1","name":"Projector A","location":"Building 1"},{"id":"eq-2","name":"Camera B","location":"Building 2"},{"id":"eq-3","name":"Meeting Room C","location":"Library, 2nd floor"}]
+
+## Check 3 - create a booking from examples/booking.json (expect 201)
+PS> curl.exe -i -X POST http://localhost:8787/api/bookings -H "Content-Type: application/json" --data-binary "@examples/booking.json"
+HTTP/1.1 201 Created
+Content-Type: application/json
+{"id":"96d5b1ef-f78a-479c-b968-a04b09f940e9","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation","createdAt":"2026-10-06T07:54:32.244Z","updatedAt":"2026-10-06T07:54:32.244Z"}
+
+## Check 4 - the same command a second time (expect 409)
+PS> curl.exe -i -X POST http://localhost:8787/api/bookings -H "Content-Type: application/json" --data-binary "@examples/booking.json"
+HTTP/1.1 409 Conflict
+Content-Type: application/json
+{"error":"Equipment eq-1 is already booked from 2026-10-20T09:00:00.000Z to 2026-10-20T11:00:00.000Z (booking 96d5b1ef-f78a-479c-b968-a04b09f940e9)"}
+
+## Check 5 - a booking that does not exist (expect 404)
+PS> curl.exe -i http://localhost:8787/api/bookings/not-found
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+{"error":"Booking not found"}
