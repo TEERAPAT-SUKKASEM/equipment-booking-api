@@ -88,7 +88,7 @@ To be completed by me, by hand, before submitting. I tick a box only after I hav
 | # | What I do | What I should see | What I saw |
 |---|---|---|---|
 | 1 | Read `src/index.ts` from top to bottom | I can say what each function does and why | |
-| 2 | `npm run db:reset`, then `curl.exe -i http://localhost:8787/api/equipment` | `200` and three equipment records | |
+| 2 | `npm run dev` in my own terminal; in a second terminal `npm run db:reset`, then `curl.exe -i http://localhost:8787/api/equipment` | `200` and three equipment records | |
 | 3 | `curl.exe -i -X POST http://localhost:8787/api/bookings -H "Content-Type: application/json" --data-binary "@examples/booking.json"` | `201` and a booking with an `id` | |
 | 4 | The same command a second time | `409` and `{ "error": "Equipment eq-1 is already booked ..." }` | |
 | 5 | `curl.exe -i http://localhost:8787/api/bookings/not-found` | `404` and `{ "error": "Booking not found" }` | |
