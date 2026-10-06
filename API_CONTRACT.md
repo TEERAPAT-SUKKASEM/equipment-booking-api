@@ -1,10 +1,13 @@
 # API Contract — Campus Equipment Booking API
 
-Written **before** the implementation (see git history: the design commit precedes the code commit).
+The first version of this contract was written **before** the implementation (git history: the design
+commit `ff38e6a` precedes the first code commit). It was updated after the Quality Gate review; the
+changes are listed in [QUALITY_GATE_REVIEW.md](QUALITY_GATE_REVIEW.md).
 
 - **Base URL (local):** `http://localhost:8787/api`
 - **Format:** JSON in, JSON out (`Content-Type: application/json`)
-- **Timestamps:** ISO 8601 date-time with an explicit offset; always returned normalised to UTC, e.g. `2026-10-20T09:00:00.000Z`
+- **Timestamps:** ISO 8601 date-time with an explicit offset; always returned normalised to UTC with
+  millisecond precision, e.g. `2026-10-20T09:00:00.000Z`
 - **Errors:** every error is `{ "error": "<message>" }`
 
 ## Resources
@@ -88,13 +91,22 @@ Empty body. `404` if no booking has that id (so a second delete of the same id r
 | # | Rule | Status | Example `error` message |
 |---|---|---:|---|
 | V1 | Body must be valid JSON and a JSON object | 400 | `Request body must be valid JSON` |
-| V2 | `equipmentId`, `borrowerName`, `purpose` are non-empty strings | 400 | `borrowerName is required and must be a non-empty string` |
-| V3 | `startAt`, `endAt` are ISO 8601 date-times with an offset (`Z` or `±hh:mm`) | 400 | `startAt is required and must be an ISO 8601 date-time ...` |
-| V4 | `startAt` must be before `endAt` | 400 | `startAt must be before endAt` |
-| V5 | `PATCH` must change at least one field | 400 | `Provide at least one field to update: ...` |
+| V2 | `equipmentId`, `borrowerName`, `purpose` are present, non-empty strings of at most 50 / 100 / 500 characters | 400 | `purpose is required` · `borrowerName must be a non-empty string` · `purpose must be at most 500 characters` |
+| V3 | `startAt`, `endAt` are present and valid timestamps (format below) | 400 | `startAt must be an ISO 8601 date-time with a time zone between the years 2000 and 2100, e.g. 2026-10-20T09:00:00.000Z` |
+| V4 | `startAt` must be before `endAt` (equal is not allowed) | 400 | `startAt must be before endAt` |
+| V5 | `PATCH` must contain at least one of the five booking fields | 400 | `Provide at least one field to update: ...` |
 | V6 | `equipmentId` must refer to existing equipment | 404 | `Equipment not found: eq-999` |
-| V7 | `:id` must refer to an existing booking | 404 | `Booking not found: <id>` |
-| V8 | No overlap with another booking of the same equipment | 409 | `Equipment eq-1 is already booked from ... to ...` |
+| V7 | `:id` must refer to an existing booking | 404 | `Booking not found` |
+| V8 | No overlap with another booking of the same equipment | 409 | `Equipment eq-1 is already booked from ... to ... (booking <id>)` |
+
+**Timestamp format (V3).** `YYYY-MM-DDTHH:mm[:ss[.f]]` followed by `Z` or `±hh:mm`:
+
+- upper-case `T` and `Z`; seconds are optional; up to 3 fractional digits;
+- an explicit offset is required (`2026-10-20T09:00:00` without a zone is rejected);
+- the calendar day must exist (`2026-02-30` is rejected);
+- after conversion to UTC the year must be between 2000 and 2100.
+
+Accepted values are stored and returned in UTC: `2026-10-20T16:00:00+07:00` comes back as `2026-10-20T09:00:00.000Z`.
 
 **Overlap rule (V8).** A booking occupies the half-open interval `[startAt, endAt)`.
 Two bookings of the same equipment overlap when
@@ -105,7 +117,9 @@ existing.startAt < new.endAt  AND  existing.endAt > new.startAt
 
 So `09:00–11:00` and `10:00–12:00` conflict, but `09:00–11:00` and `11:00–13:00` do not
 (the first one has already ended when the second one starts). Bookings of *different*
-equipment never conflict.
+equipment never conflict. The rule is applied on create **and** on update; on update the booking
+is not compared with itself. The check is part of the same SQL statement that writes the row,
+so two requests that arrive at the same moment cannot both get the slot (see [SCHEMA.md](SCHEMA.md)).
 
 **Order of checks** (decides which error is returned when several apply):
 malformed JSON (400) → booking in the URL exists (404, `PATCH` only) → field validation (400)
@@ -114,14 +128,21 @@ malformed JSON (400) → booking in the URL exists (404, `PATCH` only) → field
 ## Why 400, 404 and 409
 
 - **400 Bad Request — the request itself is wrong.** Malformed JSON, a missing/empty field, a wrong
-  type, an unparseable timestamp, or `startAt >= endAt`. Sending the same request again can never
-  succeed; the client has to fix the payload.
+  type, a value that is too long, an invalid timestamp, or `startAt >= endAt`. Sending the same
+  request again can never succeed; the client has to fix the payload.
 - **404 Not Found — the request is well-formed but points at something that does not exist.**
   The booking id in the URL, an `equipmentId` that is not in the `equipment` table, or an unknown route.
 - **409 Conflict — the request is valid, but collides with data already stored.** Another booking of
   the same equipment overlaps the requested time. The very same request could succeed later (for
   example after the other booking is deleted), which is exactly what distinguishes it from a 400.
 - **500** is only used for unexpected failures and still uses the `{ "error": ... }` format.
+
+**The one debatable case: an `equipmentId` that does not exist.** The brief lists "equipmentId must
+exist" under data validation (which suggests 400) and also says "404 when a resource is not found".
+This API answers **404**, because the payload is well-formed and the problem is that the equipment
+resource it refers to is not there; the message names it (`Equipment not found: eq-999`), so it
+cannot be confused with a missing booking or route. A missing or empty `equipmentId` is a 400.
+If 400 is preferred, it is a one-line change in `requireEquipment` in `src/index.ts`.
 
 ## Assumptions
 
@@ -130,12 +151,23 @@ Things the brief does not spell out. Each one is checkable with a request.
 | # | Assumption | How to check |
 |---|---|---|
 | A1 | All five payload fields are required on `POST` (`purpose` too, because the response must include it). | `POST` without `purpose` → 400 |
-| A2 | `PATCH` is a partial update; the full payload also works. An empty `{}` is rejected. | `PATCH {"purpose":"x"}` → 200, `PATCH {}` → 400 |
+| A2 | `PATCH` is a partial update; the full payload also works. A body with none of the five fields is rejected. Sending a field with its current value is allowed. | `PATCH {"purpose":"x"}` → 200, `PATCH {}` → 400 |
 | A3 | Timestamps need an explicit offset. `2026-10-20T09:00:00` (no zone) is ambiguous, so it is a 400. Values are stored and returned in UTC. | `POST` with `+07:00` times → response shows `Z` times |
 | A4 | Intervals are half-open: back-to-back bookings are allowed. | Book `09:00–11:00`, then `11:00–13:00` → 201 |
 | A5 | A well-formed `equipmentId` that does not exist is a **404** ("a resource is not found"); a missing/empty `equipmentId` is a **400**. | `POST` with `eq-999` → 404 |
-| A6 | Unknown fields in the body are ignored; `id`, `createdAt`, `updatedAt` cannot be set by the client. | `POST` with `"id":"x"` → server id is used |
+| A6 | Unknown fields in the body are ignored; `id`, `createdAt`, `updatedAt` cannot be set by the client. (A `PATCH` body that has *only* such fields is a 400 by V5.) | `POST` with `"id":"x"` → server id is used |
 | A7 | Equipment is seed data and read-only through the API. | Only `GET /equipment` exists |
 | A8 | No authentication (not requested in the brief). | – |
 | A9 | Bookings in the past are allowed (the brief does not forbid them and it keeps tests repeatable). | `POST` with a 2020 date → 201 |
 | A10 | Unknown routes and methods return a JSON 404, never an HTML page. | `GET /api/nope` → 404 JSON |
+| A11 | Leading and trailing spaces in `equipmentId`, `borrowerName` and `purpose` are removed; a value of only spaces counts as empty. | `POST` with `"borrowerName":"   "` → 400 |
+| A12 | Supported years are 2000–2100 and text fields have a maximum length (50 / 100 / 500), so that stored values stay comparable and bounded. Length is counted as JavaScript counts it: letters (including Thai) count 1, an emoji counts 2. | `POST` with year 9999 → 400 |
+
+## Known limitations
+
+- Two `PATCH` requests for the **same** booking at the same moment: the last one wins for all fields.
+  The overlap rule still holds, because it is checked inside the write itself.
+- The request `Content-Type` header is not enforced: any body that parses as JSON is accepted.
+- Responses produced by the runtime before the request reaches the API (an invalid HTTP method name,
+  an over-long URL) are plain text, not JSON. Every response produced by the API itself is JSON.
+- No pagination or filtering on `GET /bookings`; not needed for the brief.

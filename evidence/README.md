@@ -1,0 +1,72 @@
+# Test Evidence
+
+- **Base API URL used for testing:** `http://localhost:8787/api`
+- **HTTP client:** `curl` 8.21 (Git Bash on Windows 11); the concurrency test uses Node.js `fetch`
+- **Code tested:** commit `e621a20` (`src/` has not changed since), local D1 database reset with `npm run db:reset` before the runs
+- **Date:** 2026-10-06
+
+## Summary of the results
+
+| Run | File | Result |
+|---|---|---|
+| Instructor's cURL Quick Test Guide, steps 1–9, full `curl -i` output | [curl_guide_run.txt](curl_guide_run.txt) | 9 of 9 match the expected status |
+| Own test script, 25 cases (CRUD + 400 + 404 + 409) | [curl_tests_output.txt](curl_tests_output.txt) | 25 passed, 0 failed |
+| Concurrency test on the **first version** (`v1-snapshot`) | [race_before_fix.txt](race_before_fix.txt) | FAIL: 3 of 60 rounds double-booked |
+| Concurrency test **after the fix** | [race_after_fix.txt](race_after_fix.txt) | PASS: 0 of 60 rounds |
+| Extreme-year booking on the **first version** | [extreme_year_before_fix.txt](extreme_year_before_fix.txt) | Defect: start after end accepted (`201`); after the fix it is a `400` (case 16) |
+| Other checks after the fixes (new validation rules, PowerShell example, schema, missing database) | [other_checks.txt](other_checks.txt) | all as expected |
+
+Every error response in these files is JSON of the form `{ "error": "..." }`.
+
+## Coverage required by the guide
+
+| Required case | Where |
+|---|---|
+| Create | guide step 3; cases 2, 7, 8 |
+| Read | guide steps 1, 2, 4; cases 1, 3, 4 |
+| Update | guide step 5 (full payload); cases 5, 10 (partial) |
+| Delete | guide step 9; cases 21, 24, 25 |
+| Invalid input → 400 | guide step 6; cases 12–17 |
+| Not found → 404 | guide step 8; cases 18–20, 22, 23 |
+| Booking conflict → 409 | guide step 7 (create); cases 6 (create), 9 and 11 (update) |
+
+## The 25 cases of `tests/curl_tests.sh`
+
+Generated from [curl_tests_output.txt](curl_tests_output.txt), which contains each `curl` command and the full response.
+
+| # | Case | Expected | Actual | Result |
+|---:|---|---:|---:|---|
+| 1 | List equipment | 200 | 200 | PASS |
+| 2 | Create a booking | 201 | 201 | PASS |
+| 3 | List bookings | 200 | 200 | PASS |
+| 4 | Get one booking | 200 | 200 | PASS |
+| 5 | Update one field (partial PATCH) | 200 | 200 | PASS |
+| 6 | Create an overlapping booking for the same equipment | 409 | 409 | PASS |
+| 7 | Create a back-to-back booking (starts when the first one ends) | 201 | 201 | PASS |
+| 8 | Create the same time slot on different equipment | 201 | 201 | PASS |
+| 9 | Update a booking so that it overlaps another one | 409 | 409 | PASS |
+| 10 | Update a booking inside its own time range (no conflict with itself) | 200 | 200 | PASS |
+| 11 | Move a booking to equipment that is busy at that time | 409 | 409 | PASS |
+| 12 | Create with startAt after endAt | 400 | 400 | PASS |
+| 13 | Create without borrowerName | 400 | 400 | PASS |
+| 14 | Create with a timestamp that is not ISO 8601 | 400 | 400 | PASS |
+| 15 | Create with malformed JSON | 400 | 400 | PASS |
+| 16 | Create with a timestamp outside the supported years 2000-2100 (this one is year 10000 in UTC) | 400 | 400 | PASS |
+| 17 | Create with a borrowerName longer than 100 characters | 400 | 400 | PASS |
+| 18 | Create for equipment that does not exist | 404 | 404 | PASS |
+| 19 | Get a booking that does not exist | 404 | 404 | PASS |
+| 20 | Update a booking that does not exist | 404 | 404 | PASS |
+| 21 | Delete a booking | 204 | 204 | PASS |
+| 22 | Get the deleted booking | 404 | 404 | PASS |
+| 23 | Delete the same booking again | 404 | 404 | PASS |
+| 24 | Clean up: delete the second booking | 204 | 204 | PASS |
+| 25 | Clean up: delete the third booking | 204 | 204 | PASS |
+
+## Run the tests again
+
+```bash
+npm run db:reset             # clean database (the server may keep running)
+bash tests/curl_guide.sh     # 9 guide steps
+bash tests/curl_tests.sh     # 25 cases
+node tests/race_test.mjs     # concurrency
+```

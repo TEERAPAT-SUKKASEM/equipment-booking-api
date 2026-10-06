@@ -89,6 +89,10 @@ call "Create without borrowerName" 400 POST /bookings \
 call "Create with a timestamp that is not ISO 8601" 400 POST /bookings \
   '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"tomorrow morning","endAt":"2026-10-21T11:00:00.000Z","purpose":"Bad timestamp"}'
 call "Create with malformed JSON" 400 POST /bookings '{"equipmentId": '
+call "Create with a timestamp outside the supported years 2000-2100 (this one is year 10000 in UTC)" 400 POST /bookings \
+  '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"9999-12-31T23:30:00-01:00","endAt":"9999-12-31T23:00:00Z","purpose":"Out of range"}'
+call "Create with a borrowerName longer than 100 characters" 400 POST /bookings \
+  "{\"equipmentId\":\"eq-1\",\"borrowerName\":\"$(printf 'x%.0s' $(seq 1 101))\",\"startAt\":\"2026-10-21T09:00:00.000Z\",\"endAt\":\"2026-10-21T11:00:00.000Z\",\"purpose\":\"Too long\"}"
 
 # ---------- not found (404) ----------
 call "Create for equipment that does not exist" 404 POST /bookings \

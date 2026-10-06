@@ -1,0 +1,48 @@
+Additional checks run on 2026-10-06 after the Quality Gate fixes (code at commit e621a20).
+Each block shows the command and the output that was observed.
+
+==========================================================================================
+1. New validation rules  (Base API URL: http://localhost:8787/api, POST /bookings)
+   Format: <case> -> <response body> [<status>]
+==========================================================================================
+year 10000 after UTC conversion                -> {"error":"startAt must be an ISO 8601 date-time with a time zone between the years 2000 and 2100, e.g. 2026-10-20T09:00:00.000Z"} [400]
+   body: {"equipmentId":"eq-3","borrowerName":"T","startAt":"9999-12-31T23:30:00-01:00","endAt":"9999-12-31T23:00:00Z","purpose":"p"}
+year 0000 with +01:00                          -> {"error":"startAt must be an ISO 8601 date-time with a time zone between the years 2000 and 2100, e.g. 2026-10-20T09:00:00.000Z"} [400]
+year 1999 (below range)                        -> {"error":"startAt must be an ISO 8601 date-time with a time zone between the years 2000 and 2100, e.g. 2026-10-20T09:00:00.000Z"} [400]
+year 2101 (above range)                        -> {"error":"startAt must be an ISO 8601 date-time with a time zone between the years 2000 and 2100, e.g. 2026-10-20T09:00:00.000Z"} [400]
+purpose 501 chars                              -> {"error":"purpose must be at most 500 characters"} [400]
+borrowerName 101 chars                         -> {"error":"borrowerName must be at most 100 characters"} [400]
+equipmentId 51 chars                           -> {"error":"equipmentId must be at most 50 characters"} [400]
+missing startAt                                -> {"error":"startAt is required"} [400]
+purpose is null                                -> {"error":"purpose is required"} [400]
+borrowerName is a number                       -> {"error":"borrowerName must be a non-empty string"} [400]
+no time zone                                   -> {"error":"startAt must be an ISO 8601 date-time with a time zone between the years 2000 and 2100, e.g. 2026-10-20T09:00:00.000Z"} [400]
+purpose exactly 500 chars, year 2100           -> created (201), returned purpose length = 500, then deleted (204)
+long booking id in URL (5000 chars)            -> {"error":"Booking not found"} [404]
+
+==========================================================================================
+2. README example for PowerShell (body read from a file)
+   $ curl.exe -s -i -X POST http://localhost:8787/api/bookings -H "Content-Type: application/json" --data-binary "@examples/booking.json"
+==========================================================================================
+--- PowerShell 7 ---
+HTTP/1.1 201 Created
+id=e8397b03-95d3-4b07-af9b-afc92f5ea492
+delete -> 204
+--- Windows PowerShell 5.1 ---
+5.1.26100.9549
+HTTP/1.1 201 Created
+id=6cd049de-9926-484e-bccc-775e41e52e7b
+delete -> 204
+
+==========================================================================================
+3. PRIMARY KEY NOT NULL (new db/schema.sql loaded into an isolated copy of the local database)
+   $ npx wrangler d1 execute equipment-booking-db --local --persist-to <copy> --command "INSERT INTO equipment (id, name, location) VALUES (NULL, 'x', 'y')"
+==========================================================================================
+✘ [ERROR] NOT NULL constraint failed: equipment.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAINT_NOTNULL)
+
+==========================================================================================
+4. Database not set up (second server on port 8789 with an empty database folder, db:setup NOT run)
+   $ npx wrangler dev --port 8789 --persist-to <empty folder>
+==========================================================================================
+GET /api/equipment  -> {"error":"Database is not set up. Run: npm run db:setup"} [500]
+GET /api/bookings   -> {"error":"Database is not set up. Run: npm run db:setup"} [500]

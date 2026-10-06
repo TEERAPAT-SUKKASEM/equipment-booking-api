@@ -1,0 +1,15 @@
+Extreme-year check on the FIRST VERSION (src/index.ts and db/schema.sql of git tag v1-snapshot, commit 0c407c0),
+served on a separate port with its own empty database. Date: 2026-10-06T07:36:31Z
+
+1) A booking whose start is 1.5 hours AFTER its end (23:30-01:00 is 00:30 UTC of the next day, year 10000)
+$ curl -X POST http://localhost:8789/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-3","borrowerName":"Year test","startAt":"9999-12-31T23:30:00-01:00","endAt":"9999-12-31T23:00:00Z","purpose":"start is 1.5 hours AFTER end"}'
+{"id":"11df715d-a429-40d2-b3d3-092f1b78a2ad","equipmentId":"eq-3","borrowerName":"Year test","startAt":"+010000-01-01T00:30:00.000Z","endAt":"9999-12-31T23:00:00.000Z","purpose":"start is 1.5 hours AFTER end","createdAt":"2026-10-06T07:36:31.625Z","updatedAt":"2026-10-06T07:36:31.625Z"}
+HTTP 201
+
+2) After that, a normal booking for the same equipment (the example from the brief, on eq-3)
+$ curl -X POST http://localhost:8789/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation"}'
+{"error":"Equipment eq-3 is already booked from +010000-01-01T00:30:00.000Z to 9999-12-31T23:00:00.000Z (booking 11df715d-a429-40d2-b3d3-092f1b78a2ad)"}
+HTTP 409
+
+Expected by the contract: 1) 400 (startAt must be before endAt), 2) 201.
+After the fix the same first request returns 400: see case 16 in curl_tests_output.txt and other_checks.txt.
