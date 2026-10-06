@@ -1,0 +1,43 @@
+Clean-clone run: the repository was cloned into an empty folder and the README was followed from the top.
+Date: 2026-10-06T07:40:13Z   Cloned commit: e094dfb   Node v24.18.1, npm 12.0.2
+
+$ git clone <repository> final-clone && cd final-clone
+$ npm install
+added 38 packages in 2s
+npm warn install-scripts 2 packages had install scripts blocked because they are not covered by allowScripts:
+npm warn install-scripts   esbuild@0.28.1 (postinstall: node install.js)
+npm warn install-scripts   workerd@1.20261001.1 (postinstall: node install.js)
+(exit code 0)
+$ npm run db:setup
+4 commands executed successfully. (exit code 0)
+$ npm run typecheck
+(exit code 0)
+$ npx wrangler dev --port 8790      (port 8790 because 8787 was in use by the development server)
+GET http://localhost:8790/api/equipment -> 200
+
+$ BASE_URL=http://localhost:8790/api bash tests/curl_guide.sh
+## 1. List equipment - expect 200
+=> PASS (expected 200, got 200)
+## 2. List bookings - expect 200
+=> PASS (expected 200, got 200)
+## 3. Create a booking - expect 201
+=> PASS (expected 201, got 201)
+## 4. Get one booking - expect 200
+=> PASS (expected 200, got 200)
+## 5. Update a booking - expect 200
+=> PASS (expected 200, got 200)
+## 6. Invalid time range - expect 400
+=> PASS (expected 400, got 400)
+## 7. Overlapping booking - expect 409
+=> PASS (expected 409, got 409)
+## 8. Missing booking - expect 404
+=> PASS (expected 404, got 404)
+## 9. Delete a booking - expect 204
+=> PASS (expected 204, got 204)
+Summary: 9 passed, 0 failed, 9 steps - Base API URL: http://localhost:8790/api
+
+$ BASE_URL=http://localhost:8790/api bash tests/curl_tests.sh
+Summary: 25 passed, 0 failed, 25 cases - Base API URL: http://localhost:8790/api
+
+$ BASE_URL=http://localhost:8790/api node tests/race_test.mjs
+Result: PASS - 0 of 60 rounds produced a double booking

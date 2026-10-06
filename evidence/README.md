@@ -1,9 +1,13 @@
 # Test Evidence
 
 - **Base API URL used for testing:** `http://localhost:8787/api`
-- **HTTP client:** `curl` 8.21 (Git Bash on Windows 11); the concurrency test uses Node.js `fetch`
-- **Code tested:** commit `e621a20` (`src/` has not changed since), local D1 database reset with `npm run db:reset` before the runs
+- **HTTP client:** `curl` 8.18.0 in Git Bash on Windows 11 for the test scripts; `curl.exe` 8.21.0 for the
+  PowerShell example; the concurrency test uses Node.js `fetch`
+- **Code tested:** commit `e621a20` (`src/` and `db/` have not changed since; the clean-clone run used commit
+  `e094dfb`, and later commits change documents and evidence only), local D1 database reset with `npm run db:reset` before the runs
 - **Date:** 2026-10-06
+- **Hashes:** the first version is git tag `v1-snapshot`, which points to commit `0c407c0`. The header of
+  `race_before_fix.txt` shows `9e33d01`: that is the id of the annotated tag object itself, not another commit.
 
 ## Summary of the results
 
@@ -15,6 +19,8 @@
 | Concurrency test **after the fix** | [race_after_fix.txt](race_after_fix.txt) | PASS: 0 of 60 rounds |
 | Extreme-year booking on the **first version** | [extreme_year_before_fix.txt](extreme_year_before_fix.txt) | Defect: start after end accepted (`201`); after the fix it is a `400` (case 16) |
 | Other checks after the fixes (new validation rules, PowerShell example, schema, missing database) | [other_checks.txt](other_checks.txt) | all as expected |
+| Clean clone: `git clone`, then the README commands, then all three test scripts (on port 8790) | [clean_clone_run.txt](clean_clone_run.txt) | install and setup exit 0; 9 of 9, 25 of 25, concurrency PASS |
+| What the AI reviewers reported, with the verifier's verdict for each finding | [ai_review_summary.md](ai_review_summary.md) | 40 reported, 21 confirmed (11 distinct issues) |
 
 Every error response in these files is JSON of the form `{ "error": "..." }`.
 

@@ -24,7 +24,7 @@ what I checked myself is in the last section.
 - Wrote the design first: `API_CONTRACT.md`, `SCHEMA.md`, `db/schema.sql` (commit `ff38e6a`, 13:39),
   then `src/index.ts`, `wrangler.jsonc`, `tsconfig.json`, `README.md` (commit `0c407c0`, 13:42, tag `v1-snapshot`).
 
-**AI checks:** `npx tsc --noEmit` → exit code 0; `npm run db:setup` → 4 SQL commands executed; 20 `curl`
+**AI checks:** `npx tsc --noEmit` → exit code 0; `npm run db:setup` → 4 SQL commands executed; 21 `curl`
 requests against `http://localhost:8787/api`, all with the status code the contract states.
 
 **What I used:** all of it, as the first version.
@@ -33,7 +33,7 @@ requests against `http://localhost:8787/api`, all with the status code the contr
 
 **What the AI did:** started five independent AI reviewers on `v1-snapshot` (contract, business rules,
 validation and security, data design, clean-checkout run). A second agent had to reproduce each finding
-before it counted: 40 reported, 21 confirmed (11 distinct issues).
+before it counted: 40 reported, 21 confirmed (11 distinct issues); the list is in `evidence/ai_review_summary.md`.
 
 **What I used:** the confirmed issues, listed with their fixes in `QUALITY_GATE_REVIEW.md`.
 
@@ -46,14 +46,15 @@ While checking its own README against the installed packages, the assistant foun
 "Requires Node.js 20 or newer" was wrong: wrangler 4.147 needs Node 22 or newer. Fixed in commit `f58e4a0`.
 Lesson: version numbers and commands written by the AI have to be checked against the real project.
 
-### 4 — 14:20 to 14:45 · Fixes, tests and documents (no new prompt)
+### 4 — from 14:20 · Fixes, tests and documents (no new prompt)
 
-`quality_gate.md` and `curl_test_guide.md` were added to the exam folder at 14:16; the assistant read them.
+`quality_gate.md` and `curl_test_guide.md` were added to the exam folder at 14:17; the assistant read them.
 
 **What the AI did**
 
-- Recorded the defects on the first version before changing it (`evidence/race_before_fix.txt`,
-  `evidence/extreme_year_before_fix.txt`).
+- Recorded the double-booking defect on the first version at 14:25, before changing the code
+  (`evidence/race_before_fix.txt`). The extreme-year defect was recorded at 14:36, after the fix, by
+  serving the `v1-snapshot` code on a separate port (`evidence/extreme_year_before_fix.txt`).
 - Fixed the code (commit `e621a20`): the overlap check is now inside the `INSERT`/`UPDATE` statement;
   years limited to 2000–2100; maximum text lengths; `NOT NULL` primary keys; a clear message when the
   database has not been set up.
@@ -67,8 +68,18 @@ Lesson: version numbers and commands written by the AI have to be checked agains
 ### 5 — 14:28 to 14:31 · Independent check of the fixes (no new prompt)
 
 Two more AI agents tried to break the fixed code on a separate server instance (about 200 requests and
-six kinds of simultaneous-request tests). Result: no defect in the fixes. One low note (an emoji counts
+seven kinds of simultaneous-request tests, 25 rounds each). Result: no defect in the fixes. One low note (an emoji counts
 as two characters towards the length limits) was documented in `API_CONTRACT.md` A12 instead of changed.
+
+### 6 — 14:39 to 14:46 · Clean-clone run and final consistency check (no new prompt)
+
+- The assistant cloned the repository into an empty folder and followed the README: install, database
+  setup, start, then all three test scripts (`evidence/clean_clone_run.txt`: 9 of 9, 25 of 25, concurrency PASS).
+- Two AI agents compared the documents with the code and the records with the evidence and git history.
+  The documents matched the code. Ten inaccuracies in the records (a wrong curl version, two wrong times,
+  numbers without a saved source, an evidence file that was not committed yet) were corrected, and
+  `evidence/ai_review_summary.md` was added so that the numbers quoted from the AI reviews can be checked.
+  Lesson: summaries written by the AI need the same checking as its code.
 
 ## My own verification
 
